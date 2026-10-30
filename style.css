@@ -30,3 +30,110 @@ body {
 .driver-card:hover {
     transform: translateY(-5px);
 }
+
+
+/* Driver and Constructor Standings */
+
+
+.standing-card {
+    background-color: #252530;
+    padding: 20px;
+    border-radius: 10px;
+    border-left: 4px solid #e10600;
+    transition: transform 0.2s ease;
+}
+
+.standing-card:hover {
+    transform: translateY(-5px);
+}
+
+.standing-card h3 {
+    margin-top: 0;
+}
+
+.standing-card p {
+    color: #cccccc;
+}
+
+/* Mobile and tablet layout */
+
+@media (max-width: 900px) {
+    #driverRoster,
+    #driverStandings,
+    #constructorStandings {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 600px) {
+    #driverRoster,
+    #driverStandings,
+    #constructorStandings {
+        grid-template-columns: 1fr;
+    }
+
+    body {
+        padding: 12px;
+    }
+}
+
+
+/* Championship Tables */
+
+.standings-table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: #252530;
+    margin-bottom: 40px;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.standings-table th,
+.standings-table td {
+    padding: 14px 18px;
+    text-align: left;
+    border-bottom: 1px solid #40404a;
+}
+
+.standings-table th {
+    background-color: #e10600;
+    color: white;
+    text-transform: uppercase;
+    font-size: 14px;
+}
+
+.standings-table tbody tr:hover {
+    background-color: #353540;
+}
+
+.standings-table td:last-child,
+.standings-table th:last-child {
+    text-align: right;
+    font-weight: bold;
+}
+
+/* Responsive Driver Roster */
+
+@media (max-width: 900px) {
+    #driverRoster {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 600px) {
+    #driverRoster {
+        grid-template-columns: 1fr;
+    }
+
+    body {
+        padding: 12px;
+    }
+
+    .standings-table th,
+    .standings-table td {
+        padding: 10px 8px;
+        font-size: 12px;
+    }
+}
+
