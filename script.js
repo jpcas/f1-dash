@@ -170,43 +170,13 @@ fetch(resultsURL)
 
 
 // Temporary race data for testing our table
-const sampleResults = [
-    { position: 1, driver: "Lando Norris", fastestLap: "1:32.456" },
-    { position: 2, driver: "Max Verstappen", fastestLap: "1:32.891" },
-    { position: 3, driver: "Charles Leclerc", fastestLap: "1:33.102" }
-];
 
-raceResults.innerHTML = `
-    <table class="standings-table">
-        <thead>
-            <tr>
-                <th>Position</th>
-                <th>Driver</th>
-                <th>Fastest Lap</th>
-            </tr>
-        </thead>
-        <tbody></tbody>
-    </table>
-`
-console.log("Race table code executed!");
-
-const raceTableBody = raceResults.querySelector("tbody");
-
-sampleResults.forEach(result => {
-    raceTableBody.innerHTML += `
-        <tr>
-            <td>${result.position}</td>
-            <td>${result.driver}</td>
-            <td>${result.fastestLap}</td>
-        </tr>
-    `;
-});
+raceResults.innerHTML = "<p>Select a season and race to view results.</p>";
 
 yearSelect.addEventListener("change", () => {
     const selectedYear = yearSelect.value;
-
-    console.log("Selected season:", selectedYear);
-
+    raceSelect.innerHTML = '<option value="">Loading races...</option>';
+    raceResults.innerHTML = "<p>Select a race to view results.</p>";
     const raceURL = `https://api.openf1.org/v1/sessions?session_type=Race&year=${selectedYear}`;
 
     console.log("Race API URL:", raceURL);
@@ -219,9 +189,6 @@ yearSelect.addEventListener("change", () => {
     })
     .then(races => {
         const grandPrixRaces = races.filter(race => race.session_name === "Race");
-    
-        console.log("Grand Prix races:", grandPrixRaces.length);
-        console.log("Filtered races:", grandPrixRaces);
         raceSelect.innerHTML = '<option value="">Select a race</option>';
 
 grandPrixRaces.forEach(race => {
@@ -231,8 +198,6 @@ grandPrixRaces.forEach(race => {
         </option>
     `;
 });
-console.log("Dropdown options:", raceSelect.options.length);
-
     })
     .catch(error => {
         console.error("Error loading races:", error);
@@ -247,30 +212,71 @@ raceSelect.addEventListener("change", () => {
         return;
     }
     
-    const positionsURL = `https://api.openf1.org/v1/position?session_key=${selectedRace}`;
+const positionsURL = `https://api.openf1.org/v1/position?session_key=${selectedRace}`;
+const driversURL = `https://api.openf1.org/v1/drivers?session_key=${selectedRace}`;
+const intervalsURL = `https://api.openf1.org/v1/intervals?session_key=${selectedRace}`;
     
     console.log("Positions API URL:", positionsURL);
-    fetch(positionsURL)
-    .then(response => {
-        if (!response.ok) {
-            throw new Error(`API error: ${response.status}`);
-        }
-
-        return response.json();
+    Promise.all([
+        fetch(positionsURL),
+        fetch(driversURL),
+        fetch(intervalsURL)
+    ])
+    .then(responses => {
+        responses.forEach(response => {
+            if (!response.ok) {
+                throw new Error(`API error: ${response.status}`);
+            }
+        });
+    
+        return Promise.all(responses.map(response => response.json()));
     })
-    .then(positions => {
-        console.log("Position records:", positions.length);
-        console.log("First position record:", positions[0]);
+    .then(([positions, drivers, intervals]) => {
         const latestPositions = {};
 
 positions.forEach(record => {
-    latestPositions[record.driver_number] = record;
+    const driverNumber = record.driver_number;
+    const previous = latestPositions[driverNumber];
+
+    if (!previous || record.date > previous.date) {
+        latestPositions[driverNumber] = record;
+    }
 });
 
-console.log("Latest positions:", latestPositions);
 const finalPositions = Object.values(latestPositions);
 
-console.log("Total drivers:", finalPositions.length);
+finalPositions.sort((a, b) => a.position - b.position);
+const latestIntervals = {};
+
+intervals.forEach(record => {
+    const driverNumber = record.driver_number;
+    const previous = latestIntervals[driverNumber];
+
+    if (!previous || record.date > previous.date) {
+        latestIntervals[driverNumber] = record;
+    }
+});
+raceResults.innerHTML = `
+    <table class="standings-table">
+        <thead>
+            <tr>
+                <th>Position</th>
+                <th>Driver</th>
+                <th>Gap</th>
+            </tr>
+        </thead>
+        <tbody>
+            ${finalPositions.map(driver => `
+                <tr>
+                    <td>${driver.position}</td>
+                    <td>${drivers.find(d => d.driver_number === driver.driver_number)?.full_name || "Unknown"}</td>
+                    <td>${latestIntervals[driver.driver_number]?.gap_to_leader ?? "N/A"}</td>
+                </tr>
+            `).join("")}
+        </tbody>
+    </table>
+`;
+
     })
     .catch(error => {
         console.error("Error loading positions:", error);
